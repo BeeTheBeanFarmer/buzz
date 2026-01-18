@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBT Card Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-card: #0a0a0a;
+            --bg-input: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --text-muted: #555555;
+            --accent: #37e878;
+            --accent-dim: #2bc463;
+            --border: #222222;
+        }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        /* Input Section */
+        .input-section {
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .username-input {
+            width: 100%;
+            padding: 1.1rem 1.25rem 1.1rem 2.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: 500;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0.8rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .username-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .username-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(55, 232, 120, 0.1);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1.1rem;
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: 600;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .generate-btn:hover {
+            background: var(--accent-dim);
+            transform: translateY(-1px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Card */
+        .card-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .card-container.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-wrapper {
+            perspective: 1000px;
+            perspective-origin: center;
+        }
+
+        .card {
+            background: linear-gradient(145deg,
+                var(--card-color-1, #151515) 0%,
+                var(--card-color-2, #0a0a0a) 50%,
+                var(--card-color-3, #050505) 100%);
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+            border-radius: 1.2rem;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out, background 0.5s ease;
+            box-shadow:
+                0 25px 50px -12px var(--card-shadow, rgba(0, 0, 0, 0.8)),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(55, 232, 120, 0.3) 50%, transparent 100%);
+            z-index: 2;
+        }
+
+        /* Glossy shine overlay */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                105deg,
+                transparent 40%,
+                rgba(255, 255, 255, 0.03) 45%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.03) 55%,
+                transparent 60%
+            );
+            pointer-events: none;
+            transform: translateX(var(--shine-x, -100%));
+            transition: transform 0.3s ease-out;
+            z-index: 10;
+        }
+
+        .card:hover::after {
+            transform: translateX(var(--shine-x, 0%));
+        }
+
+        /* Glossy edge highlights */
+        .card-gloss {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 1.2rem;
+            pointer-events: none;
+            z-index: 1;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at 30% 0%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-brand {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .card-type {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-body {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-input);
+            overflow: hidden;
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .card-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-username {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-handle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .card-numbers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .card-number-group {
+            text-align: center;
+        }
+
+        .card-number-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.4rem;
+        }
+
+        .card-number-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .card-number-value.serial {
+            color: var(--accent);
+        }
+
+        /* Referral Section */
+        .referral-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 0.8rem;
+        }
+
+        .referral-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .referral-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .referral-code-box {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .referral-code {
+            flex: 1;
+            padding: 0.9rem 1rem;
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .copy-btn {
+            padding: 0.9rem 1.25rem;
+            font-size: 0.85rem;
+            font-family: inherit;
+            font-weight: 600;
+            background: var(--border);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0.6rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: var(--text-muted);
+        }
+
+        .copy-btn.copied {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        .link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.9rem;
+            background: var(--border);
+            border-radius: 0.6rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .link-btn:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        /* Stats */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Referred badge */
+        .referred-badge {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(55, 232, 120, 0.1);
+            border: 1px solid rgba(55, 232, 120, 0.2);
+            border-radius: 0.6rem;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+
+        .referred-badge.visible {
+            display: flex;
+        }
+
+        /* Download button */
+        .download-btn {
+            width: 100%;
+            padding: 0.9rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            padding-top: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="logo"><span>ORBT</span> Card</h1>
+            <p class="tagline">Generate your membership card. Climb the ranks.</p>
+        </header>
+
+        <div class="referred-badge" id="referredBadge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span id="referredText">Referred by @user</span>
+        </div>
+
+        <section class="input-section" id="inputSection">
+            <div class="input-group">
+                <span class="input-prefix">@</span>
+                <input
+                    type="text"
+                    class="username-input"
+                    id="usernameInput"
+                    placeholder="your_twitter_username"
+                    autocomplete="off"
+                    maxlength="15"
+                >
+            </div>
+            <button class="generate-btn" id="generateBtn">Generate Card</button>
+        </section>
+
+        <section class="card-container" id="cardContainer">
+            <div class="card-wrapper">
+                <div class="card" id="card">
+                    <div class="card-gloss"></div>
+                    <div class="card-header">
+                    <span class="card-brand">ORBT Protocol</span>
+                    <span class="card-type">Member Card</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-avatar">
+                        <img id="cardAvatar" src="" alt="Avatar">
+                    </div>
+                    <div class="card-info">
+                        <div class="card-username" id="cardUsername">Username</div>
+                        <div class="card-handle" id="cardHandle">@handle</div>
+                    </div>
+                </div>
+                    <div class="card-numbers">
+                        <div class="card-number-group">
+                            <div class="card-number-label">ID Number</div>
+                            <div class="card-number-value" id="cardId">000000</div>
+                        </div>
+                        <div class="card-number-group">
+                            <div class="card-number-label">Serial / Rank</div>
+                            <div class="card-number-value serial" id="cardSerial">#1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="download-btn" id="downloadBtn">Download Card</button>
+
+            <div class="referral-section">
+                <div class="referral-title">Climb the Ranks</div>
+                <div class="referral-desc">Share your referral link. Each signup using your link moves you up the leaderboard.</div>
+                <div class="referral-code-box">
+                    <input type="text" class="referral-code" id="referralCode" readonly>
+                    <button class="copy-btn" id="copyBtn">Copy</button>
+                    <a href="#" class="link-btn" id="linkBtn" target="_blank" title="Open link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                </div>
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="stat-value" id="referralCount">0</div>
+                        <div class="stat-label">Referrals</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="rankDisplay">#1</div>
+                        <div class="stat-label">Your Rank</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>Built for <a href="https://orbt.xyz" target="_blank">ORBT Protocol</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Database simulation using localStorage
+        const DB_KEY = 'orbt_cards_db';
+
+        function getDB() {
+            const data = localStorage.getItem(DB_KEY);
+            return data ? JSON.parse(data) : { users: {}, referrals: {} };
+        }
+
+        function saveDB(db) {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        // Generate consistent ID from username
+        function generateId(username) {
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                const char = username.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString().slice(0, 6).padStart(6, '0');
+        }
+
+        // Generate referral code
+        function generateReferralCode(username) {
+            return username.toLowerCase() + '_' + generateId(username).slice(0, 4);
+        }
+
+        // Get user rank based on referrals
+        function calculateRank(username, db) {
+            const referralCounts = [];
+
+            // Count referrals for each user
+            for (const user in db.users) {
+                const count = db.referrals[user] ? db.referrals[user].length : 0;
+                referralCounts.push({ user, count });
+            }
+
+            // Sort by referral count (descending)
+            referralCounts.sort((a, b) => b.count - a.count);
+
+            // Find user's position (1-indexed)
+            const position = referralCounts.findIndex(u => u.user === username.toLowerCase());
+            return position + 1;
+        }
+
+        // Check URL for referral code
+        function checkReferral() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('ref');
+        }
+
+        // Process referral
+        function processReferral(referrerCode, newUsername) {
+            const db = getDB();
+
+            // Find referrer by code
+            for (const user in db.users) {
+                if (db.users[user].referralCode === referrerCode) {
+                    // Don't allow self-referral
+                    if (user === newUsername.toLowerCase()) return null;
+
+                    // Initialize referrals array if needed
+                    if (!db.referrals[user]) {
+                        db.referrals[user] = [];
+                    }
+
+                    // Don't count duplicate referrals
+                    if (!db.referrals[user].includes(newUsername.toLowerCase())) {
+                        db.referrals[user].push(newUsername.toLowerCase());
+                        saveDB(db);
+                    }
+
+                    return user;
+                }
+            }
+            return null;
+        }
+
+        // Register or get user
+        function registerUser(username) {
+            const db = getDB();
+            const lowerUsername = username.toLowerCase();
+
+            if (!db.users[lowerUsername]) {
+                db.users[lowerUsername] = {
+                    username: username,
+                    id: generateId(username),
+                    referralCode: generateReferralCode(username),
+                    createdAt: Date.now()
+                };
+                saveDB(db);
+            }
+
+            return db.users[lowerUsername];
+        }
+
+        // Get referral count
+        function getReferralCount(username) {
+            const db = getDB();
+            const referrals = db.referrals[username.toLowerCase()];
+            return referrals ? referrals.length : 0;
+        }
+
+        // Extract colors from image
+        function extractColors(img) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const size = 50; // Sample size
+                canvas.width = size;
+                canvas.height = size;
+
+                try {
+                    ctx.drawImage(img, 0, 0, size, size);
+                    const imageData = ctx.getImageData(0, 0, size, size);
+                    const pixels = imageData.data;
+
+                    // Collect color samples
+                    const colorBuckets = {};
+
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        const r = Math.floor(pixels[i] / 32) * 32;
+                        const g = Math.floor(pixels[i + 1] / 32) * 32;
+                        const b = Math.floor(pixels[i + 2] / 32) * 32;
+
+                        // Skip very dark or very light colors
+                        const brightness = (r + g + b) / 3;
+                        if (brightness < 30 || brightness > 240) continue;
+
+                        const key = `${r},${g},${b}`;
+                        colorBuckets[key] = (colorBuckets[key] || 0) + 1;
+                    }
+
+                    // Sort by frequency
+                    const sortedColors = Object.entries(colorBuckets)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([color]) => {
+                            const [r, g, b] = color.split(',').map(Number);
+                            return { r, g, b };
+                        });
+
+                    if (sortedColors.length >= 2) {
+                        resolve(sortedColors);
+                    } else {
+                        resolve(null);
+                    }
+                } catch (e) {
+                    console.log('Color extraction failed:', e);
+                    resolve(null);
+                }
+            });
+        }
+
+        // Darken a color
+        function darkenColor(r, g, b, factor) {
+            return {
+                r: Math.floor(r * factor),
+                g: Math.floor(g * factor),
+                b: Math.floor(b * factor)
+            };
+        }
+
+        // Apply colors to card
+        function applyCardColors(colors) {
+            const card = document.getElementById('card');
+
+            if (!colors || colors.length < 2) {
+                // Fallback to default dark
+                card.style.setProperty('--card-color-1', '#151515');
+                card.style.setProperty('--card-color-2', '#0a0a0a');
+                card.style.setProperty('--card-color-3', '#050505');
+                return;
+            }
+
+            const primary = colors[0];
+            const secondary = colors[1] || colors[0];
+
+            // Create darkened versions for the gradient
+            const dark1 = darkenColor(primary.r, primary.g, primary.b, 0.25);
+            const dark2 = darkenColor(secondary.r, secondary.g, secondary.b, 0.15);
+            const dark3 = darkenColor(primary.r, primary.g, primary.b, 0.08);
+
+            card.style.setProperty('--card-color-1', `rgb(${dark1.r}, ${dark1.g}, ${dark1.b})`);
+            card.style.setProperty('--card-color-2', `rgb(${dark2.r}, ${dark2.g}, ${dark2.b})`);
+            card.style.setProperty('--card-color-3', `rgb(${dark3.r}, ${dark3.g}, ${dark3.b})`);
+            card.style.setProperty('--card-border', `rgba(${primary.r}, ${primary.g}, ${primary.b}, 0.3)`);
+            card.style.setProperty('--card-shadow', `rgba(${primary.r}, ${primary.g}, ${primary.b}, 0.3)`);
+        }
+
+        // DOM elements
+        const usernameInput = document.getElementById('usernameInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const cardContainer = document.getElementById('cardContainer');
+        const inputSection = document.getElementById('inputSection');
+        const referredBadge = document.getElementById('referredBadge');
+        const referredText = document.getElementById('referredText');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Check for referral on load
+        const referralCode = checkReferral();
+        let referrer = null;
+
+        // Generate card
+        async function generateCard() {
+            const username = usernameInput.value.trim().replace('@', '');
+            if (!username) return;
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            // Register user
+            const user = registerUser(username);
+
+            // Process referral if exists
+            if (referralCode) {
+                referrer = processReferral(referralCode, username);
+                if (referrer) {
+                    referredBadge.classList.add('visible');
+                    referredText.textContent = `Referred by @${referrer}`;
+                }
+            }
+
+            // Get stats
+            const db = getDB();
+            const referralCountValue = getReferralCount(username);
+            const rank = calculateRank(username, db);
+
+            // Load avatar and extract colors
+            const avatarImg = document.getElementById('cardAvatar');
+            const avatarUrl = `https://unavatar.io/twitter/${username}`;
+
+            // Create a proxy image for color extraction (CORS)
+            const proxyImg = new Image();
+            proxyImg.crossOrigin = 'anonymous';
+
+            proxyImg.onload = async () => {
+                const colors = await extractColors(proxyImg);
+                applyCardColors(colors);
+            };
+
+            proxyImg.onerror = () => {
+                // Fallback colors if image fails
+                applyCardColors(null);
+            };
+
+            proxyImg.src = avatarUrl;
+
+            // Update card content
+            avatarImg.src = avatarUrl;
+            document.getElementById('cardUsername').textContent = username;
+            document.getElementById('cardHandle').textContent = '@' + username;
+            document.getElementById('cardId').textContent = user.id;
+            document.getElementById('cardSerial').textContent = '#' + rank;
+
+            // Update referral section
+            const baseUrl = 'https://orbt.blq.io';
+            const fullReferralUrl = baseUrl + '?ref=' + user.referralCode;
+
+            document.getElementById('referralCode').value = fullReferralUrl;
+            document.getElementById('linkBtn').href = fullReferralUrl;
+            document.getElementById('referralCount').textContent = referralCountValue;
+            document.getElementById('rankDisplay').textContent = '#' + rank;
+
+            // Show card
+            setTimeout(() => {
+                inputSection.style.display = 'none';
+                cardContainer.classList.add('visible');
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Card';
+            }, 500);
+        }
+
+        // Copy referral link
+        function copyReferralLink() {
+            const referralInput = document.getElementById('referralCode');
+            referralInput.select();
+            document.execCommand('copy');
+
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy';
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // Download card as image
+        async function downloadCard() {
+            const card = document.getElementById('card');
+
+            // Use html2canvas if available, otherwise alert
+            if (typeof html2canvas !== 'undefined') {
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#000000',
+                    scale: 2
+                });
+                const link = document.createElement('a');
+                link.download = 'orbt-card.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            } else {
+                // Fallback: copy card info
+                const username = document.getElementById('cardUsername').textContent;
+                const id = document.getElementById('cardId').textContent;
+                const rank = document.getElementById('cardSerial').textContent;
+                alert(`ORBT Card\n\nUsername: @${username}\nID: ${id}\nRank: ${rank}\n\n(For image download, html2canvas library needed)`);
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generateCard);
+        usernameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') generateCard();
+        });
+        copyBtn.addEventListener('click', copyReferralLink);
+        downloadBtn.addEventListener('click', downloadCard);
+
+        // Clean username input
+        usernameInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+        });
+
+        // 3D Card interaction
+        const card = document.getElementById('card');
+        let isHovering = false;
+
+        function handleCardMove(e) {
+            if (!isHovering) return;
+
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const mouseX = e.clientX - centerX;
+            const mouseY = e.clientY - centerY;
+
+            // Calculate rotation (max 15 degrees)
+            const rotateY = (mouseX / (rect.width / 2)) * 15;
+            const rotateX = -(mouseY / (rect.height / 2)) * 15;
+
+            // Calculate shine position
+            const shineX = ((e.clientX - rect.left) / rect.width) * 200 - 100;
+
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            card.style.setProperty('--shine-x', `${shineX}%`);
+        }
+
+        function handleCardEnter() {
+            isHovering = true;
+            card.style.transition = 'transform 0.1s ease-out';
+        }
+
+        function handleCardLeave() {
+            isHovering = false;
+            card.style.transition = 'transform 0.5s ease-out';
+            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+            card.style.setProperty('--shine-x', '-100%');
+        }
+
+        card.addEventListener('mouseenter', handleCardEnter);
+        card.addEventListener('mousemove', handleCardMove);
+        card.addEventListener('mouseleave', handleCardLeave);
+
+        // Touch support for mobile
+        card.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            handleCardMove({ clientX: touch.clientX, clientY: touch.clientY });
+        });
+
+        card.addEventListener('touchstart', handleCardEnter);
+        card.addEventListener('touchend', handleCardLeave);
+
+        // Focus input on load
+        usernameInput.focus();
+    </script>
+</body>
+</html>
